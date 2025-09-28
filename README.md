@@ -45,9 +45,11 @@ Simply open the HTML file in a browser. Begin interacting with the page—switch
 
 ## File Structure
 
+```zsh
 activity-monitor-dashboard/
 ├── index.html       # Main dashboard file
 └── README.md        # Project documentation
+```
 
 ## License
 This project is licensed under the MIT license.
