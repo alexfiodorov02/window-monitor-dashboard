@@ -36,9 +36,9 @@ A lightweight, browser-based activity monitoring tool that tracks user interacti
 
 Clone the repository:
 
-```bash
+```zsh
 git clone https://github.com/alexfiodorov02/window-monitor-dashboard.git
-
+```
 ## Usage
 
 Simply open the HTML file in a browser. Begin interacting with the page—switch tabs, type in the editor, copy/paste text—and observe the activity log update in real time.
