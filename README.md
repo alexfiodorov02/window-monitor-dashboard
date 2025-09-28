@@ -49,6 +49,7 @@ Simply open the HTML file in a browser. Begin interacting with the page—switch
 activity-monitor-dashboard/
 ├── index.html       # Main dashboard file
 └── README.md        # Project documentation
+└── LICENSE.md        # Project license
 ```
 
 ## License
