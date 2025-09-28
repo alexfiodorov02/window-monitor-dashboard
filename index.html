@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Activity Monitor</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #log { max-height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; }
+    .log-entry { margin-bottom: 5px; }
+    .info { color: green; }
+    .warning { color: orange; }
+    .critical { color: red; }
+    #codeEditor { width: 100%; height: 100px; }
+  </style>
+</head>
+<body>
+  <h1>Activity Monitor Dashboard</h1>
+  <p id="windowStatus">Window: UNKNOWN</p>
+  <p id="mouseStatus">Mouse: UNKNOWN</p>
+  <textarea id="codeEditor" placeholder="Type code here..."></textarea>
+  <h2>Activity Log</h2>
+  <div id="log"></div>
+
+  <script>
+    const windowStatus = document.getElementById('windowStatus');
+    const mouseStatus = document.getElementById('mouseStatus');
+    const codeEditor = document.getElementById('codeEditor');
+    const logContainer = document.getElementById('log');
+
+    let mouseOnPage = false;
+    let lastMouseMove = 0;
+    let pasteDetected = false;
+    let lastKeyTime = Date.now();
+    let keystrokes = [];
+    let lastTextLength = 0;
+
+    function logActivity(message, severity = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${severity}`;
+      entry.textContent = `[${timestamp}] (${severity.toUpperCase()}) ${message}`;
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+
+    function updateMouseStatus() {
+      mouseStatus.textContent = `Mouse: ${mouseOnPage ? 'ON PAGE' : 'OFF PAGE'}`;
+    }
+
+    function detectDevTools() {
+      if (window.outerHeight - window.innerHeight > 100) {
+        logActivity('DevTools likely opened (resize anomaly)', 'critical');
+      }
+    }
+
+    // Event Listeners
+    window.addEventListener('focus', () => {
+      windowStatus.textContent = 'Window: FOCUSED';
+      logActivity('Window regained focus', 'info');
+    });
+
+    window.addEventListener('blur', () => {
+      windowStatus.textContent = 'Window: BLURRED';
+      logActivity('Window lost focus', 'warning');
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        logActivity('Tab switched or window minimized', 'warning');
+      } else {
+        logActivity('Tab became visible again', 'info');
+      }
+    });
+
+    document.addEventListener('mouseenter', () => {
+      mouseOnPage = true;
+      updateMouseStatus();
+    });
+
+    document.addEventListener('mouseleave', () => {
+      mouseOnPage = false;
+      logActivity('Mouse left page area', 'warning');
+    });
+
+    document.addEventListener('mousemove', () => {
+      lastMouseMove = Date.now();
+      if (!mouseOnPage) {
+        mouseOnPage = true;
+        updateMouseStatus();
+      }
+    });
+
+    document.addEventListener('copy', (e) => {
+      const copiedText = window.getSelection().toString();
+      if (copiedText.length > 10) {
+        logActivity(`Large text copied (${copiedText.length} chars)`, 'warning');
+      }
+    });
+
+    document.addEventListener('paste', (e) => {
+      const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+      if (pastedText.length > 20) {
+        logActivity(`Large paste detected (${pastedText.length} chars)`, 'critical');
+        pasteDetected = true;
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.altKey && e.key === 'Tab') || 
+          (e.metaKey && e.key === 'Tab') || 
+          (e.ctrlKey && e.key === 'Tab')) {
+        logActivity('App/tab switching shortcut detected', 'warning');
+      }
+
+      if (e.key === 'F12') {
+        e.preventDefault();
+        logActivity('F12 (DevTools) key blocked', 'critical');
+      }
+
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'v') logActivity('Paste shortcut used', 'warning');
+        if (e.key === 'f') logActivity('Find/search shortcut used', 'warning');
+      }
+    });
+
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      logActivity('Right-click blocked', 'warning');
+    });
+
+    document.addEventListener('selectionchange', () => {
+      const selection = window.getSelection().toString();
+      if (selection.length > 50) {
+        logActivity(`Large text selection (${selection.length} chars)`, 'info');
+      }
+    });
+
+    window.addEventListener('beforeunload', () => {
+      logActivity('User attempted to leave page', 'critical');
+    });
+
+    window.addEventListener('resize', detectDevTools);
+
+    codeEditor.addEventListener('focus', () => {
+      logActivity('Code editor focused', 'info');
+    });
+
+    codeEditor.addEventListener('blur', () => {
+      logActivity('Code editor lost focus', 'warning');
+    });
+
+    codeEditor.addEventListener('keydown', (e) => {
+      const currentTime = Date.now();
+      const timeDiff = currentTime - lastKeyTime;
+      keystrokes.push({key: e.key, time: currentTime, interval: timeDiff});
+      lastKeyTime = currentTime;
+    });
+
+    codeEditor.addEventListener('input', (e) => {
+      const currentLength = codeEditor.value.length;
+      const lengthDiff = currentLength - lastTextLength;
+      if (lengthDiff > 30 && e.inputType !== 'insertFromPaste') {
+        logActivity(`Sudden text increase (${lengthDiff} chars) without paste`, 'warning');
+      }
+      lastTextLength = currentLength;
+    });
+  </script>
+</body>
+</html>
